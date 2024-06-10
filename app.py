@@ -14,7 +14,7 @@ def data_scraping(stock):
     hist = market.history(period="max")
     
     if hist.empty:
-        st.write("GAADA KANG :(")
+        st.error("Market Is Not Found! Try Something Else")
         return None
 
     data = pd.DataFrame(hist)
@@ -102,9 +102,9 @@ stock = st.text_input("Search Market", placeholder="Stock Market")
 
 if stock:
     df = data_scraping(stock)
-    current = df["Close"][-1]
     
     if df is not None:
+        current = df["Close"][-1]
         model, df, mae, rsme = train_model(df)
         result = predict(model, df)
         
