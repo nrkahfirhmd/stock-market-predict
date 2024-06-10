@@ -46,6 +46,7 @@ def train_model(data):
     mae = mean_absolute_error(y_test, y_pred)
     rsme = np.sqrt(mean_squared_error(y_test, y_pred))
     
+    # model = lr.fit(X_train, y_train)
     model = lr.fit(X, y)
     
     return model, df, mae, rsme
@@ -83,12 +84,58 @@ def predict(model, data, days=7):
 
     return predictions
 
+
+def graphic(df, predictions):
+    last = df["Close"].iloc[-23:].values
+    pred = np.array(predictions)
+
+    data = {
+        "Forecast": np.concatenate((last, pred)),
+        "Actual": np.concatenate((last, [None]*len(pred)))
+    }
+    plot_df = pd.DataFrame(data)
+
+    st.line_chart(plot_df, color=["#6EDB8F", "#DBD035"])
+
+st.title(":green[Stock Market] Prediction", anchor=False)
 stock = st.text_input("Search Market", placeholder="Stock Market")
 
 if stock:
     df = data_scraping(stock)
+    current = df["Close"][-1]
     
     if df is not None:
         model, df, mae, rsme = train_model(df)
-        st.write(predict(model, df))
-        st.write("with mae = " + str(mae) + " rsme = " + str(rsme))
+        result = predict(model, df)
+        
+        st.subheader(":green[Current Price] : " + str(round(current)))
+        st.subheader(":green[30-Days Graphic]")
+        graphic(df, result)
+        st.header(":green[7-Days] Forecast")
+        
+        now = current
+        i = 1
+        for days in result:
+            with st.container():
+                col1, col2 = st.columns(2)
+                off = days - now
+
+                if off < 0:
+                    off = off * -1
+                    percentage = off / now
+                    change = ":red[(-" + str(round(percentage, 5)) + "%)]"
+                else:
+                    percentage = off / now
+                    change = ":green[(+" + str(round(percentage, 5)) + "%)]"
+                
+                with col1:
+                    st.subheader("Day-" + str(i))
+                
+                with col2:
+                    st.subheader(str(round(days, 3)) + " " + change)
+            
+            now = days
+            i = i + 1
+        
+        st.subheader(":red[BEWARE : ]")
+        st.markdown("#### Average predictions are off by " + str(round(mae)) + " units from the actual values.")
