@@ -17,7 +17,7 @@ def data_scraping(stock):
         st.error("Market Is Not Found! Try Something Else")
         return None
 
-    data = pd.DataFrame(hist)
+    data = hist.reset_index()
     
     return data
 
@@ -104,7 +104,8 @@ if stock:
     df = data_scraping(stock)
     
     if df is not None:
-        current = df["Close"][-1]
+        current = df["Close"].iloc[-1]
+        latest_date = df['Date'].iloc[-1]
         model, df, mae, rsme = train_model(df)
         result = predict(model, df)
         
@@ -116,6 +117,7 @@ if stock:
         now = current
         i = 1
         for days in result:
+            latest_date = latest_date + pd.Timedelta(days=1)
             with st.container():
                 col1, col2 = st.columns(2)
                 off = days - now
@@ -129,7 +131,7 @@ if stock:
                     change = ":green[(+" + str(round(percentage, 5)) + "%)]"
                 
                 with col1:
-                    st.subheader("Day-" + str(i))
+                    st.subheader("Day-" + str(i) + " (" + str(pd.to_datetime(latest_date).strftime('%Y-%m-%d')) + ")")
                 
                 with col2:
                     st.subheader(str(round(days, 3)) + " " + change)
